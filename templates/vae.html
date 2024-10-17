@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VAE Digit Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Ensure the container is positioned relatively for absolute positioning of labels */
+        .latent-space-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <h1>VAE Digit Generator</h1>
+    <div class="container">
+        <div class="vae-section">
+            <h2>VAE Latent Space</h2>
+            <div class="latent-space-container">
+                <canvas id="latent-space-canvas" width="300" height="300"></canvas>
+                <div class="digit-labels">
+                    <span class="digit-label" data-digit="0">0</span>
+                    <span class="digit-label" data-digit="1">1</span>
+                    <span class="digit-label" data-digit="2">2</span>
+                    <span class="digit-label" data-digit="3">3</span>
+                    <span class="digit-label" data-digit="4">4</span>
+                    <span class="digit-label" data-digit="5">5</span>
+                    <span class="digit-label" data-digit="6">6</span>
+                    <span class="digit-label" data-digit="7">7</span>
+                    <span class="digit-label" data-digit="8">8</span>
+                    <span class="digit-label" data-digit="9">9</span>
+                </div>
+            </div>
+            <canvas id="generated-area" width="280" height="280"></canvas>
+            <!-- Removed Generate Button -->
+            <div class="coordinates">
+                <p>z1: <span id="z1-value">0</span></p>
+                <p>z2: <span id="z2-value">0</span></p>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/vae_script.js') }}"></script>
+</body>
+</html>
