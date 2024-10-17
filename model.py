@@ -34,3 +34,10 @@ class MNISTModel:
 
     def predict(self, image):
         return self.model.predict(image)
+    
+    def load_model(self):
+        try:
+            self.model.load_weights(self.model_path)
+            print("Model weights loaded successfully.")
+        except:
+            print("No saved model weights found. Please train the model.")

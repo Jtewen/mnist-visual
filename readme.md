@@ -1,6 +1,6 @@
 # MNIST Digit Recognizer Project
 
-This project is a web-based application that allows users to draw digits and get predictions from a trained MNIST model.
+This project was created for a Precision Planting keynote presentation. It is a web-based application that allows users to draw digits and get predictions from a trained MNIST model.
 
 ## Prerequisites
 
@@ -40,6 +40,9 @@ This project is a web-based application that allows users to draw digits and get
 3. Draw a digit in the canvas and click the "Clear" button to reset the canvas.
 
 4. The application will automatically send the drawn image to the model for prediction, and the confidence scores will be displayed.
+
+5. **VAE Visualization**:
+   - VAE section allows you to visualize the latent space.
 
 ## License
 

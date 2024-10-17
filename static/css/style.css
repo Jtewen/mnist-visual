@@ -16,18 +16,18 @@ h1 {
     margin-top: 20px;
 }
 
-.draw-section, .predictions-section {
+.draw-section, .predictions-section, .vae-section {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-#draw-area {
+#draw-area, #generated-area, #latent-space-canvas {
     border: 1px solid #000;
     cursor: crosshair;
 }
 
-#clear-btn {
+#clear-btn, #generate-btn {
     margin-top: 10px;
     padding: 10px 20px;
     font-size: 16px;
@@ -60,4 +60,47 @@ h1 {
     background-color: #4caf50; /* Green color for filled part */
     border-radius: 4px;
     transition: width 0.3s ease;
+}
+
+.vae-section {
+    width: 320px;
+}
+
+.latent-space-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+.latent-space-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.digit-labels {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 300px;
+    pointer-events: none; /* Allow clicks to pass through to the canvas */
+}
+
+.digit-label {
+    position: absolute;
+    font-size: 14px;
+    font-weight: bold;
+    color: red;
+    transform: translate(-50%, -50%); /* Center the label */
+}
+
+.coordinates {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.coordinates p {
+    margin: 5px 0;
 }
