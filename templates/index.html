@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MNIST Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>MNIST Digit Recognizer</h1>
+    <div class="container">
+        <div class="draw-section">
+            <canvas id="draw-area" width="280" height="280"></canvas>
+            <button id="clear-btn">Clear</button>
+        </div>
+        <div class="predictions-section">
+            <h2>Predictions:</h2>
+            <div id="confidence-scores">
+                <div class="score-bar" data-digit="0"><span class="score-label">0: 0%</span></div>
+                <div class="score-bar" data-digit="1"><span class="score-label">1: 0%</span></div>
+                <div class="score-bar" data-digit="2"><span class="score-label">2: 0%</span></div>
+                <div class="score-bar" data-digit="3"><span class="score-label">3: 0%</span></div>
+                <div class="score-bar" data-digit="4"><span class="score-label">4: 0%</span></div>
+                <div class="score-bar" data-digit="5"><span class="score-label">5: 0%</span></div>
+                <div class="score-bar" data-digit="6"><span class="score-label">6: 0%</span></div>
+                <div class="score-bar" data-digit="7"><span class="score-label">7: 0%</span></div>
+                <div class="score-bar" data-digit="8"><span class="score-label">8: 0%</span></div>
+                <div class="score-bar" data-digit="9"><span class="score-label">9: 0%</span></div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
