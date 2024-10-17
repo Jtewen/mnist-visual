@@ -1,6 +1,6 @@
-# MNIST Digit Recognizer Project
+# MNIST Classifier and VAE Visualization Demo
 
-This project was created for a Precision Planting keynote presentation. It is a web-based application that allows users to draw digits and get predictions from a trained MNIST model.
+This project was created for a Precision Planting keynote presentation. It is a web-based application that allows users to draw digits and get predictions from a trained MNIST model, as well as visualize the latent space of a VAE trained on the MNIST dataset.
 
 ## Prerequisites
 
