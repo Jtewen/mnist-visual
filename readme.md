@@ -33,7 +33,7 @@ To set up this codebase, follow the steps below:
 
 2. **Create a Virtual Environment** (optional but recommended):
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate
    ```
 
@@ -45,7 +45,7 @@ To set up this codebase, follow the steps below:
 
 4. **Run the Training Script and Start the Flask Application**:
    ```bash
-   python app.py
+   python3 app.py
    ```
 
 5. **Access the Application**:
