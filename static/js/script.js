@@ -71,6 +71,47 @@ function predict() {
         });
     })
     .catch(console.error);
+    showFeatureMaps();
+}
+
+function showFeatureMaps() {
+    const dataURL = canvas.toDataURL('image/png');
+    fetch('/feature_maps', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: dataURL })
+    })
+    .then(response => response.json())
+    .then(featureMapImages => {
+        const featureMapContainer = document.getElementById('feature-map-images');
+        featureMapContainer.innerHTML = ''; // Clear previous images
+
+        // Check if featureMapImages is structured correctly
+        console.log('Feature Map Images:', featureMapImages);
+
+        // Append feature maps dynamically based on layer names
+        for (const layer in featureMapImages) {
+            const layerDiv = document.createElement('div');
+            layerDiv.innerHTML = `<h3>${layer} Feature Maps:</h3>`;
+            const mapsContainer = document.createElement('div');
+            mapsContainer.id = `${layer}-maps`;
+
+            featureMapImages[layer].forEach(imgSrc => {
+                const img = document.createElement('img');
+                img.src = `data:image/png;base64,${imgSrc}`;
+                img.style.width = '100px'; // Set width for display
+                img.style.height = '100px'; // Set height for display
+                img.style.margin = '5px'; // Add some margin
+                mapsContainer.appendChild(img);
+            });
+
+            layerDiv.appendChild(mapsContainer);
+            featureMapContainer.appendChild(layerDiv);
+        }
+    })
+    .catch(console.error);
 }
 
 setInterval(predict, 100);

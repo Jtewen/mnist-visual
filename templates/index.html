@@ -27,6 +27,20 @@
                 <div class="score-bar" data-digit="9"><span class="score-label">9: 0%</span></div>
             </div>
         </div>
+        <div class="filters-section"></div>
+            <h2>Visualized Filters:</h2>
+            <div class="filter-images">
+                {% for image in filter_images %}
+                    <img src="{{ url_for('static', filename='filters/' + image) }}" alt="Filter Image" style="width: 100px; height: 100px; margin: 5px;">
+                {% endfor %}
+            </div>
+        </div>
+        <div class="feature-maps-section">
+            <h2>Feature Maps:</h2>
+            <div class="feature-map-images" id="feature-map-images">
+                <!-- Feature maps will be populated dynamically via JavaScript -->
+            </div>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
