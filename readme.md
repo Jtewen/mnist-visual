@@ -27,8 +27,8 @@ To set up this codebase, follow the steps below:
 
 1. **Clone the Repository**:
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/Jtewen/mnist-visual.git
+   cd mnist-visual
    ```
 
 2. **Create a Virtual Environment** (optional but recommended):
@@ -187,7 +187,7 @@ Input Feature Map:
  [5, 6, 7, 8],
  [9, 10, 11, 12],
  [13, 14, 15, 16]]
- 
+
 After 2x2 Max Pooling:
 [[6, 8],
  [14, 16]]
