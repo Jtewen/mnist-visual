@@ -3,116 +3,107 @@ import time
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers, models
-
 import matplotlib.pyplot as plt
 import numpy as np
+import logging
+from PIL import Image
+import io
+import base64
 
 class MNISTModel:
-    def __init__(self, model_path='classifier/mnist_model.h5'):
-        self.model_path = model_path
-        self.model = self.build_model()  # Build the neural network architecture
-        try:
-            self.model.load_weights(self.model_path)  # Load pre-trained weights if available
-            print("Model weights loaded.")
-        except:
-            print("No saved model found. Please train the model.")
-
+    def __init__(self):
+        self.model = self.build_model()
+        self.model_path = 'mnist_model.h5'
+        self.layer_models = {}
+    
+    def setup_layer_models(self):
+        conv_layers = [layer for layer in self.model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
+        for i, layer in enumerate(conv_layers):
+            self.layer_models[f'conv{i+1}'] = tf.keras.Model(inputs=self.model.input, outputs=layer.output)
+    
     def build_model(self):
         model = models.Sequential([
-            # Reshape input data to add a single channel dimension (28x28x1)
-            layers.Reshape((28, 28, 1), input_shape=(28, 28)),
-            # First convolutional layer: 16 filters, 3x3 kernel, ReLU activation
-            layers.Conv2D(8, (3, 3), activation='relu'),
-            # First max pooling layer: reduces spatial dimensions by half
-            layers.MaxPooling2D((2, 2)),
-            # Second convolutional layer: 32 filters, 3x3 kernel, ReLU activation
-            layers.Conv2D(16, (3, 3), activation='relu'),
-            # Second max pooling layer
-            layers.MaxPooling2D((2, 2)),
-            # Flatten the 2D feature maps to a 1D feature vector for dense layers
+            layers.Input(shape=(28, 28, 1)),
+            layers.Conv2D(8, (3, 3), activation='relu', name='conv1'),
+            layers.MaxPooling2D((2, 2), name='pool1'),
+            layers.Conv2D(16, (3, 3), activation='relu', name='conv2'),
+            layers.MaxPooling2D((2, 2), name='pool2'),
             layers.Flatten(),
-            # Fully connected layer: 128 neurons, ReLU activation for non-linearity
-            layers.Dense(128, activation='relu'),
-            # Output layer: 10 neurons (one for each digit class), softmax activation for probability distribution
-            layers.Dense(10, activation='softmax')
+            layers.Dense(128, activation='relu', name='fc1'),
+            layers.Dense(10, activation='softmax', name='output')
         ])
-        # Compile the model with Adam optimizer and sparse categorical cross-entropy loss
         model.compile(optimizer='adam',
                       loss='sparse_categorical_crossentropy',
-                      metrics=['accuracy'])  # Track accuracy during training
+                      metrics=['accuracy'])
         return model
 
-    def train(self, x_train, y_train, epochs=10):
-        self.model.fit(x_train, y_train, epochs=epochs)  # Fit the model to the training data
-        self.model.save(self.model_path)  # Save the trained model weights
-        print(f"Model weights saved to {self.model_path}.")
-        while not os.path.exists(self.model_path):
-            time.sleep(1)
-        self.visualize_filters(x_data=x_train, layer_index=1, num_filters=6)
-        self.visualize_filters(x_data=x_train, layer_index=3, num_filters=6)
+    def train(self, x_train, y_train, epochs=5):
+        self.model.fit(x_train, y_train, epochs=epochs)
+        self.model.save(self.model_path)
+        logging.info(f"Model weights saved to {self.model_path}.")
+        
+        # Setup layer models before visualizing filters
+        self.setup_layer_models()
+        
+        # Visualize filters for both convolutional layers
+        self.visualize_filters(x_train, layer_index=0)
+        self.visualize_filters(x_train, layer_index=1)
 
     def predict(self, image):
-        return self.model.predict(image)  # Returns the predicted probabilities for each class
+        return self.model.predict(image)
 
     def load_model(self):
-        try:
-            self.model.load_weights(self.model_path)  # Load weights if they exist
-            print("Model weights loaded successfully.")
-        except:
-            print("No saved model weights found. Please train the model.")
+        self.model.load_weights(self.model_path)
 
-    def get_most_active_filters(self, x_data, layer_index=0, num_filters=6):
-        # Create a model that outputs the activations of the specified layer
-        layer_model = tf.keras.Model(inputs=self.model.input, outputs=self.model.layers[layer_index].output)
+    def get_feature_maps(self, x_data):
+        feature_maps = {}
         
-        # Get the activations for the input data
-        activations = layer_model.predict(x_data)
+        for name, layer_model in self.layer_models.items():
+            activations = layer_model.predict(x_data)
+            processed_maps = []
+            
+            for channel in range(activations.shape[-1]):
+                fmap = activations[0, :, :, channel]
+                fmap = (fmap - fmap.min()) / (fmap.max() - fmap.min())
+                # Invert the colors
+                fmap = 1 - fmap
+                fmap = (fmap * 255).astype(np.uint8)
+                
+                # Create a larger image by repeating pixels
+                large_fmap = np.repeat(np.repeat(fmap, 20, axis=0), 20, axis=1)
+                
+                img = Image.fromarray(large_fmap)
+                img = img.resize((60, 60), Image.Resampling.NEAREST)
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode()
+                processed_maps.append(img_str)
+                
+            feature_maps[name] = processed_maps
         
-        # Calculate the average activation for each filter
-        avg_activations = np.mean(activations, axis=(0, 1, 2))  # Average over height, width, and batch size
+        return feature_maps
+    
+    def visualize_filters(self, x_data, layer_index=0):
+        layer_name = f'conv{layer_index+1}'
+        if layer_name not in self.layer_models:
+            return None
         
-        # Get the indices of the most active filters
-        most_active_indices = np.argsort(avg_activations)[-num_filters:][::-1]  # Get top filters
-        return most_active_indices
-
-    def visualize_filters(self, x_data, layer_index=0, num_filters=6, save_dir='static/filters'):
-        # Create the directory if it doesn't exist
-        os.makedirs(save_dir, exist_ok=True)
-
-        # Get the most active filter indices
-        active_filter_indices = self.get_most_active_filters(x_data, layer_index, num_filters)
+        filters_dir = 'static/filters'
+        if not os.path.exists(filters_dir):
+            os.makedirs(filters_dir)
         
-        # Get the weights of the specified convolutional layer
-        filters, biases = self.model.layers[layer_index].get_weights()
+        layer = self.model.get_layer(layer_name)
+        weights = layer.get_weights()[0]
         
-        # Normalize filter values to 0-1 for better visualization
-        filters = (filters - filters.min()) / (filters.max() - filters.min())
-        
-        for i, filter_index in enumerate(active_filter_indices):
-            # Create a figure for each filter
-            plt.figure(figsize=(2, 2))
-            plt.imshow(filters[:, :, 0, filter_index], cmap='gray')  # Display the first channel of the filter
-            plt.axis('off')
-            # Save the figure
-            plt.savefig(os.path.join(save_dir, f'filter_{layer_index}_{i}.png'), bbox_inches='tight', pad_inches=0)
-            plt.close()  # Close the figure to free memory
-
-    def get_feature_maps(self, image):
-        """
-        Get the feature maps from the convolutional layers for a given input image.
-        
-        Parameters:
-        - image: A numpy array representing the input image (should be preprocessed).
-        
-        Returns:
-        - A dictionary of feature maps from the convolutional layers.
-        """
-        # Create a model that outputs the activations of all convolutional layers
-        layer_outputs = {layer.name: layer.output for layer in self.model.layers if isinstance(layer, layers.Conv2D)}
-        feature_map_model = tf.keras.Model(inputs=self.model.input, outputs=list(layer_outputs.values()))
-        
-        # Get the feature maps for the input image
-        feature_maps = feature_map_model.predict(image)
-        
-        # Return a dictionary mapping layer names to their feature maps
-        return {name: fmap for name, fmap in zip(layer_outputs.keys(), feature_maps)}
+        for i in range(weights.shape[-1]):
+            filt = weights[:, :, 0, i]
+            filt = (filt - filt.min()) / (filt.max() - filt.min())
+            # Invert the colors
+            filt = 1 - filt
+            filt = (filt * 255).astype(np.uint8)
+            
+            large_filt = np.repeat(np.repeat(filt, 20, axis=0), 20, axis=1)
+            
+            img = Image.fromarray(large_filt)
+            img = img.resize((60, 60), Image.Resampling.NEAREST)
+            img.save(os.path.join(filters_dir, f'{layer_name}_filter_{i}.png'))

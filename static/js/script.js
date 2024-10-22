@@ -7,111 +7,154 @@ let lastPredictionTime = 0;
 ctx.fillStyle = 'white';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mousemove', draw);
+// Update event listeners to predict during drawing
+canvas.addEventListener('mousemove', (event) => {
+    if (drawing) {
+        draw(event);
+        debouncePredict();
+    }
+});
+
+canvas.addEventListener('mousedown', (event) => {
+    startDrawing(event);
+    debouncePredict();
+});
+
+canvas.addEventListener('mouseup', () => {
+    stopDrawing();
+    debouncePredict();
+});
 
 function startDrawing(event) {
-    drawing = true;
-    draw(event);
+  drawing = true;
+  draw(event);
 }
 
 function stopDrawing() {
-    drawing = false;
-    ctx.beginPath();
+  drawing = false;
+  ctx.beginPath();
 }
 
 function draw(event) {
-    if (!drawing) return;
-    ctx.lineWidth = 15;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#000';
+  if (!drawing) return;
+  ctx.lineWidth = 15;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
 
-    ctx.lineTo(event.offsetX, event.offsetY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(event.offsetX, event.offsetY);
+  ctx.lineTo(event.offsetX, event.offsetY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(event.offsetX, event.offsetY);
 }
 
+// Clear button should also trigger a prediction
 document.getElementById('clear-btn').addEventListener('click', () => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    debouncePredict();
 });
 
-function predict() {
-    const currentTime = Date.now();
-    if (currentTime - lastPredictionTime < 100) return;
-    lastPredictionTime = currentTime;
+const DEBOUNCE_DELAY = 100; // Increased from 10ms to 100ms for better performance
+const MIN_PREDICTION_INTERVAL = 100; // Increased from 10ms to 100ms
 
+let predictionTimeout = null;
+
+function debouncePredict() {
+    const now = Date.now();
+    if (now - lastPredictionTime < MIN_PREDICTION_INTERVAL) {
+        if (predictionTimeout) clearTimeout(predictionTimeout);
+        predictionTimeout = setTimeout(() => predict(), DEBOUNCE_DELAY);
+        return;
+    }
+    
+    predict();
+}
+
+function predict() {
+    lastPredictionTime = Date.now();
+    
     const dataURL = canvas.toDataURL('image/png');
     fetch('/predict', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataURL })
     })
     .then(response => response.json())
     .then(data => {
-        const scoreBars = document.querySelectorAll('.score-bar');
-        
-        // Reset all bars
-        scoreBars.forEach(bar => {
-            const digit = bar.getAttribute('data-digit');
-            const score = data[digit] || 0; // Get score or default to 0
-            const fill = bar.querySelector('.score-fill') || document.createElement('div');
-            
-            if (!bar.querySelector('.score-fill')) {
-                fill.classList.add('score-fill');
-                bar.appendChild(fill);
-            }
+        if (!data.confidence) return;
 
-            fill.style.width = `${(score * 100).toFixed(2)}%`;
-            bar.querySelector('.score-label').textContent = `${digit}: ${(score * 100).toFixed(2)}%`;
+        // Use requestAnimationFrame for smoother UI updates
+        requestAnimationFrame(() => {
+            updateConfidenceScores(data.confidence);
+            if (data.feature_maps) showFeatureMaps(data.feature_maps);
         });
     })
-    .catch(console.error);
-    showFeatureMaps();
+    .catch(error => console.error('Prediction error:', error));
 }
 
-function showFeatureMaps() {
-    const dataURL = canvas.toDataURL('image/png');
-    fetch('/feature_maps', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ image: dataURL })
-    })
-    .then(response => response.json())
-    .then(featureMapImages => {
-        const featureMapContainer = document.getElementById('feature-map-images');
-        featureMapContainer.innerHTML = ''; // Clear previous images
-
-        // Check if featureMapImages is structured correctly
-        console.log('Feature Map Images:', featureMapImages);
-
-        // Append feature maps dynamically based on layer names
-        for (const layer in featureMapImages) {
-            const layerDiv = document.createElement('div');
-            layerDiv.innerHTML = `<h3>${layer} Feature Maps:</h3>`;
-            const mapsContainer = document.createElement('div');
-            mapsContainer.id = `${layer}-maps`;
-
-            featureMapImages[layer].forEach(imgSrc => {
-                const img = document.createElement('img');
-                img.src = `data:image/png;base64,${imgSrc}`;
-                img.style.width = '100px'; // Set width for display
-                img.style.height = '100px'; // Set height for display
-                img.style.margin = '5px'; // Add some margin
-                mapsContainer.appendChild(img);
-            });
-
-            layerDiv.appendChild(mapsContainer);
-            featureMapContainer.appendChild(layerDiv);
+// Separate function for updating confidence scores
+function updateConfidenceScores(confidence) {
+    const scoreBars = document.querySelectorAll('.score-bar');
+    scoreBars.forEach(bar => {
+        const digit = bar.getAttribute('data-digit');
+        const score = confidence[digit] || 0;
+        const fill = bar.querySelector('.score-fill');
+        
+        if (fill) {
+            fill.style.width = `${(score * 100).toFixed(2)}%`;
+            bar.querySelector('.score-label').textContent = `${digit}: ${(score * 100).toFixed(2)}%`;
         }
-    })
-    .catch(console.error);
+    });
 }
 
-setInterval(predict, 100);
+function showFeatureMaps(featureMaps) {
+    for (const layer in featureMaps) {
+        featureMaps[layer].forEach((imgSrc, index) => {
+            const featureMapContainer = document.getElementById(`${layer}-feature-map-${index}`);
+            if (!featureMapContainer) return;
+            
+            const img = document.createElement('img');
+            img.src = `data:image/png;base64,${imgSrc}`;
+            img.className = 'feature-map-image';
+            
+            featureMapContainer.innerHTML = '';
+            featureMapContainer.appendChild(img);
+        });
+    }
+}
+
+function displayAverageActivations(avgActivations, layerName) {
+    const activationContainer = document.getElementById('activation-container');
+    const layerDiv = document.createElement('div');
+    layerDiv.innerHTML = `<h4>${layerName} Average Activations:</h4>`;
+    const ul = document.createElement('ul');
+    ul.style.listStyle = 'none';
+    ul.style.padding = '0';
+
+    avgActivations.forEach((activation, index) => {
+        const li = document.createElement('li');
+        li.style.marginBottom = '5px';
+        const percentage = (activation * 100).toFixed(2);
+        li.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>Filter ${index}:</span>
+                <div style="width: 100px; height: 20px; background: #f0f0f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${percentage}%; height: 100%; background: #4caf50;"></div>
+                </div>
+                <span>${percentage}%</span>
+            </div>
+        `;
+        ul.appendChild(li);
+    });
+
+    layerDiv.appendChild(ul);
+    activationContainer.innerHTML = ''; // Clear previous content
+    activationContainer.appendChild(layerDiv);
+}
+
+
+// Remove the setInterval and use a more efficient approach
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial prediction
+    predict();
+});

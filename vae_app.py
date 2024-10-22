@@ -22,21 +22,23 @@ def generate():
     z1 = float(data.get('z1', 0))
     z2 = float(data.get('z2', 0))
     z = [z1, z2]
-    generated_img = vae.generate_digit(z)
+    try:
+        generated_img = vae.generate_digit(z)
+        
+        if generated_img.ndim == 3:
+            if generated_img.shape[-1] == 1:
+                generated_img = np.squeeze(generated_img, axis=-1)
+            elif generated_img.shape[-1] == 3:
+                generated_img = np.dot(generated_img[..., :3], [0.2989, 0.5870, 0.1140])
+        
+        img_pil = Image.fromarray(generated_img, mode='L')
+        buffered = io.BytesIO()
+        img_pil.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    # Ensure the image is 2D
-    if generated_img.ndim == 3 and generated_img.shape[-1] == 1:
-        generated_img = np.squeeze(generated_img, axis=-1)
-    elif generated_img.ndim == 3 and generated_img.shape[-1] == 3:
-        generated_img = np.dot(generated_img[..., :3], [0.2989, 0.5870, 0.1140])
-
-    # Convert image to base64
-    img_pil = Image.fromarray(generated_img, mode='L')
-    buffered = io.BytesIO()
-    img_pil.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-
-    return jsonify({'image': f'data:image/png;base64,{img_str}'})
+        return jsonify({'image': f'data:image/png;base64,{img_str}'})
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate digit: {e}'}), 500
 
 @app.route('/digit_averages')
 def digit_averages():
@@ -45,7 +47,7 @@ def digit_averages():
             data = json.load(f)
         return jsonify(data)
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

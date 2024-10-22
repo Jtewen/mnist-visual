@@ -7,92 +7,83 @@ import base64
 import tensorflow as tf
 import logging
 import os
+import argparse
+
 
 app = Flask(__name__)
-mnist_model = MNISTModel()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Load MNIST data and train the model if not already trained
-def load_and_train():
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='MNIST Digit Recognition Server')
+parser.add_argument('--train', action='store_true', help='Force model retraining')
+args = parser.parse_args()
+
+# Initialize model and load/train
+mnist_model = None
+
+def initialize_model():
+    global mnist_model
+    mnist_model = MNISTModel()
     try:
+        if args.train:
+            raise FileNotFoundError("Forcing retraining")
         mnist_model.model.load_weights(mnist_model.model_path)
-        print("Model loaded successfully.")
+        logging.info("Model loaded successfully.")
     except:
-        print("Training model...")
+        logging.info("Training model...")
         mnist = tf.keras.datasets.mnist
         (x_train, y_train), _ = mnist.load_data()
         x_train = x_train / 255.0
         mnist_model.train(x_train, y_train, epochs=5)
+    
+    # Setup layer models after training/loading
+    mnist_model.setup_layer_models()
 
 @app.route('/')
 def index():
-    # List saved filter images
-    filter_images = os.listdir('static/filters')
-    # Initialize feature_map_images as empty
-    feature_map_images = {
-        'conv1': [],
-        'conv2': []
-    }
-    return render_template('index.html', filter_images=filter_images, feature_map_images=feature_map_images)
+    # Ensure static/filters directory exists
+    filters_dir = 'static/filters'
+    if not os.path.exists(filters_dir):
+        os.makedirs(filters_dir)
+    
+    # List and sort filter images
+    filter_images = []
+    if os.path.exists(filters_dir):
+        for layer in ['conv1', 'conv2']:
+            layer_filters = [f for f in os.listdir(filters_dir) if layer in f]
+            layer_filters.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
+            filter_images.extend(layer_filters)
+    
+    return render_template('index.html', filter_images=filter_images)
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
-    img_data = data['image']
-    # Decode the image
-    img = Image.open(io.BytesIO(base64.b64decode(img_data.split(',')[1])))
-    img = img.convert('L').resize((28, 28))
-    # Invert image colors
-    img = ImageOps.invert(img)
-    img_array = np.array(img)
-    img_array = img_array / 255.0
-    img_array = img_array.reshape(1, 28, 28)
-    predictions = mnist_model.predict(img_array)
-    confidence = {str(i): float(pred) for i, pred in enumerate(predictions[0])}
-    
-    return jsonify(confidence)
-
-@app.route('/feature_maps', methods=['POST'])
-def feature_maps():
-    data = request.get_json()
-    img_data = data['image']
-    
-    # Decode the image
-    img = Image.open(io.BytesIO(base64.b64decode(img_data.split(',')[1])))
-    img = img.convert('L').resize((28, 28))
-    img_array = np.array(img)
-    img_array = img_array / 255.0
-    img_array = img_array.reshape(1, 28, 28, 1)  # Ensure the shape is (1, 28, 28, 1)
-
-    # Get feature maps
-    feature_maps = mnist_model.get_feature_maps(img_array)
-
-    # Prepare feature maps for rendering
-    feature_map_images = {}
-    
-    for layer_name, fmap in feature_maps.items():
-        feature_map_images[layer_name] = []
-        # Normalize and convert feature maps to images
-        fmap = (fmap - fmap.min()) / (fmap.max() - fmap.min())  # Normalize to [0, 1]
+    try:
+        data = request.get_json()
+        img_data = data['image']
         
-        if fmap.ndim == 4:  # If it's a 4D array (batch, height, width, channels)
-            for channel in range(fmap.shape[-1]):
-                fmap_image = fmap[0, :, :, channel]  # Use the specific channel
-                fmap_image = (fmap_image * 255).astype(np.uint8)  # Scale to [0, 255]
-                
-                # Create a PIL image
-                pil_image = Image.fromarray(fmap_image)
-                buffered = io.BytesIO()
-                pil_image.save(buffered, format="PNG")
-                img_str = base64.b64encode(buffered.getvalue()).decode()
-                
-                # Append to the corresponding layer's feature map images
-                feature_map_images[layer_name].append(img_str)
+        # Decode the image
+        img = Image.open(io.BytesIO(base64.b64decode(img_data.split(',')[1])))
+        img = img.convert('L').resize((28, 28))
+        img = ImageOps.invert(img)
+        img_array = np.array(img, dtype=np.float32)
+        img_array = img_array / 255.0
+        img_array = img_array.reshape(1, 28, 28, 1)
 
-    return jsonify(feature_map_images)
+        # Get predictions and feature maps only
+        predictions = mnist_model.predict(img_array)
+        feature_maps = mnist_model.get_feature_maps(img_array)
+        
+        return jsonify({
+            'confidence': {str(i): float(pred) for i, pred in enumerate(predictions[0])},
+            'feature_maps': feature_maps
+        })
+    except Exception as e:
+        logging.error(f"Prediction error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    load_and_train()
-    app.run(debug=True)
+    initialize_model()
+    app.run(debug=True, use_reloader=False)  # Disable the reloader to prevent double initialization

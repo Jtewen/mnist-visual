@@ -15,30 +15,58 @@
         <div class="predictions-section">
             <h2>Predictions:</h2>
             <div id="confidence-scores">
-                <div class="score-bar" data-digit="0"><span class="score-label">0: 0%</span></div>
-                <div class="score-bar" data-digit="1"><span class="score-label">1: 0%</span></div>
-                <div class="score-bar" data-digit="2"><span class="score-label">2: 0%</span></div>
-                <div class="score-bar" data-digit="3"><span class="score-label">3: 0%</span></div>
-                <div class="score-bar" data-digit="4"><span class="score-label">4: 0%</span></div>
-                <div class="score-bar" data-digit="5"><span class="score-label">5: 0%</span></div>
-                <div class="score-bar" data-digit="6"><span class="score-label">6: 0%</span></div>
-                <div class="score-bar" data-digit="7"><span class="score-label">7: 0%</span></div>
-                <div class="score-bar" data-digit="8"><span class="score-label">8: 0%</span></div>
-                <div class="score-bar" data-digit="9"><span class="score-label">9: 0%</span></div>
-            </div>
-        </div>
-        <div class="filters-section"></div>
-            <h2>Visualized Filters:</h2>
-            <div class="filter-images">
-                {% for image in filter_images %}
-                    <img src="{{ url_for('static', filename='filters/' + image) }}" alt="Filter Image" style="width: 100px; height: 100px; margin: 5px;">
+                {% for digit in range(10) %}
+                    <div class="score-bar" data-digit="{{ digit }}">
+                        <span class="score-label">{{ digit }}: 0%</span>
+                        <div class="score-fill"></div>
+                    </div>
                 {% endfor %}
             </div>
         </div>
-        <div class="feature-maps-section">
-            <h2>Feature Maps:</h2>
-            <div class="feature-map-images" id="feature-map-images">
-                <!-- Feature maps will be populated dynamically via JavaScript -->
+        <div class="filters-and-maps-section">
+            <h2>CNN Visualization</h2>
+            <div class="visualization-container">
+                <div class="conv-layer" id="conv1-visualization">
+                    <h3>First Convolutional Layer</h3>
+                    <div class="layer-content">
+                        <div class="filter-map-pairs">
+                            {% for image in filter_images if 'conv1' in image %}
+                                <div class="filter-map-pair">
+                                    <div class="filter-wrapper">
+                                        <img src="{{ url_for('static', filename='filters/' + image) }}" 
+                                             alt="Filter Image" 
+                                             class="filter-image"
+                                             data-filter-index="{{ loop.index0 }}">
+                                    </div>
+                                    <div class="feature-map-wrapper" id="conv1-feature-map-{{ loop.index0 }}">
+                                        <!-- Feature maps will be inserted here by JavaScript -->
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="conv-layer" id="conv2-visualization">
+                    <h3>Second Convolutional Layer</h3>
+                    <div class="layer-content">
+                        <div class="filter-map-pairs">
+                            {% for image in filter_images if 'conv2' in image %}
+                                <div class="filter-map-pair">
+                                    <div class="filter-wrapper">
+                                        <img src="{{ url_for('static', filename='filters/' + image) }}" 
+                                             alt="Filter Image" 
+                                             class="filter-image"
+                                             data-filter-index="{{ loop.index0 }}">
+                                    </div>
+                                    <div class="feature-map-wrapper" id="conv2-feature-map-{{ loop.index0 }}">
+                                        <!-- Feature maps will be inserted here by JavaScript -->
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
