@@ -273,8 +273,8 @@ Understanding the architecture of a CNN is crucial for leveraging its capabiliti
 
 ### Visual Representation
 
-![Model Architecture Diagram](model_diagram.png)
-![Model Architecture Diagram](model_diagram2.png)
+![Model Architecture Diagram](static/diagrams/model_diagram.png)
+![Model Architecture Diagram](static/diagrams/model_diagram2.png)
 
 ---
 

@@ -23,14 +23,14 @@ class MNISTModel:
     
     def build_model(self):
         model = models.Sequential([
-            layers.Input(shape=(28, 28, 1)),
-            layers.Conv2D(8, (3, 3), activation='relu', name='conv1'),
-            layers.MaxPooling2D((2, 2), name='pool1'),
-            layers.Conv2D(16, (3, 3), activation='relu', name='conv2'),
-            layers.MaxPooling2D((2, 2), name='pool2'),
-            layers.Flatten(),
-            layers.Dense(128, activation='relu', name='fc1'),
-            layers.Dense(10, activation='softmax', name='output')
+            # layers.Input(shape=(28, 28, 1)),
+            # layers.Conv2D(8, (3, 3), activation='relu', name='conv1'),
+            # layers.MaxPooling2D((2, 2), name='pool1'),
+            # layers.Conv2D(16, (3, 3), activation='relu', name='conv2'),
+            # layers.MaxPooling2D((2, 2), name='pool2'),
+            # layers.Flatten(),
+            # layers.Dense(128, activation='relu', name='fc1'),
+            # layers.Dense(10, activation='softmax', name='output')
         ])
         model.compile(optimizer='adam',
                       loss='sparse_categorical_crossentropy',

@@ -4,3 +4,4 @@ digit_averages.json
 vae_model
 mnist_model.h5
 static/filters
+playground_model.h5
