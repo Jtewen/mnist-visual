@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ML Model Playground</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/playground.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ML Model Playground</h1>
+        
+        <div class="model-selector">
+            <label for="model-select">Select Model:</label>
+            <select id="model-select">
+                {% for model in models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="input-section">
+            <!-- Dynamic input area will be inserted here based on model type -->
+        </div>
+
+        <div class="predictions-section">
+            <h2>Predictions</h2>
+            <div id="prediction-display"></div>
+        </div>
+
+        <div class="visualization-section">
+            <h2>Model Visualizations</h2>
+            <div id="visualization-display"></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/playground.js') }}"></script>
+</body>
+</html>
