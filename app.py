@@ -12,15 +12,12 @@ import argparse
 
 app = Flask(__name__)
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Parse command line arguments
 parser = argparse.ArgumentParser(description='MNIST Digit Recognition Server')
 parser.add_argument('--train', action='store_true', help='Force model retraining')
 args = parser.parse_args()
 
-# Initialize model and load/train
 mnist_model = None
 
 def initialize_model():
@@ -38,17 +35,14 @@ def initialize_model():
         x_train = x_train / 255.0
         mnist_model.train(x_train, y_train, epochs=5)
     
-    # Setup layer models after training/loading
     mnist_model.setup_layer_models()
 
 @app.route('/')
 def index():
-    # Ensure static/filters directory exists
     filters_dir = 'static/filters'
     if not os.path.exists(filters_dir):
         os.makedirs(filters_dir)
     
-    # List and sort filter images
     filter_images = []
     if os.path.exists(filters_dir):
         for layer in ['conv1', 'conv2']:
@@ -64,7 +58,6 @@ def predict():
         data = request.get_json()
         img_data = data['image']
         
-        # Decode the image
         img = Image.open(io.BytesIO(base64.b64decode(img_data.split(',')[1])))
         img = img.convert('L').resize((28, 28))
         img = ImageOps.invert(img)
@@ -72,7 +65,6 @@ def predict():
         img_array = img_array / 255.0
         img_array = img_array.reshape(1, 28, 28, 1)
 
-        # Get predictions and feature maps only
         predictions = mnist_model.predict(img_array)
         feature_maps = mnist_model.get_feature_maps(img_array)
         
@@ -86,4 +78,4 @@ def predict():
 
 if __name__ == '__main__':
     initialize_model()
-    app.run(debug=True, use_reloader=False)  # Disable the reloader to prevent double initialization
+    app.run(debug=True, use_reloader=False)

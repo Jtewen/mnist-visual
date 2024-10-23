@@ -12,12 +12,10 @@ import argparse
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Parse command line arguments
 parser = argparse.ArgumentParser(description='MNIST Model Playground')
 parser.add_argument('--train', action='store_true', help='Force model retraining')
 args = parser.parse_args()
 
-# Initialize model
 model = None
 
 def initialize_model():
@@ -44,7 +42,6 @@ def predict():
     try:
         data = request.get_json()
         img_data = data['image']
-        # Decode the image
         img = Image.open(io.BytesIO(base64.b64decode(img_data.split(',')[1])))
         img = img.convert('L').resize((28, 28))
         img = ImageOps.invert(img)

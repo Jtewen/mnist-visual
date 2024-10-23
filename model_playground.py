@@ -7,10 +7,10 @@ import os
 
 class Playground:
     def __init__(self):
-        self.input_shape = (28, 28, 1)  # MNIST images are 28x28 pixels with 1 channel
-        self.output_shape = 10  # 10 classes for digits 0-9
+        self.input_shape = (28, 28, 1)
+        self.output_shape = 10
         self.model_path = 'playground_model.h5'
-        self.model = self.build_model()  # Call build_model in __init__
+        self.model = self.build_model()
     
     def build_model(self):
         model = Sequential([
@@ -34,6 +34,6 @@ class Playground:
         return self.model.predict(processed_input)
 
     def train(self, x_train, y_train, epochs=5):
-        x_train = x_train.reshape(-1, 28, 28, 1) / 255.0  # Normalize and reshape
+        x_train = x_train.reshape(-1, 28, 28, 1) / 255.0
         self.model.fit(x_train, y_train, epochs=epochs)
         self.model.save(self.model_path)

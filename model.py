@@ -65,11 +65,9 @@ class MNISTModel:
             for channel in range(activations.shape[-1]):
                 fmap = activations[0, :, :, channel]
                 fmap = (fmap - fmap.min()) / (fmap.max() - fmap.min())
-                # Invert the colors
                 fmap = 1 - fmap
                 fmap = (fmap * 255).astype(np.uint8)
                 
-                # Create a larger image by repeating pixels
                 large_fmap = np.repeat(np.repeat(fmap, 20, axis=0), 20, axis=1)
                 
                 img = Image.fromarray(large_fmap)
@@ -98,7 +96,6 @@ class MNISTModel:
         for i in range(weights.shape[-1]):
             filt = weights[:, :, 0, i]
             filt = (filt - filt.min()) / (filt.max() - filt.min())
-            # Invert the colors
             filt = 1 - filt
             filt = (filt * 255).astype(np.uint8)
             
